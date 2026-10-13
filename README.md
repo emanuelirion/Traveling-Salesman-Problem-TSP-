@@ -125,9 +125,9 @@ Não há dados reais no enunciado. A modelagem prevê **instâncias sintéticas*
 
 Preencher com nome e matrícula dos integrantes do grupo.
 
-| Nome | Matrícula |
+| Nome                  | Matrícula  |
 | Emanuel Irion da Rosa | 2310100375 |
-| | |
+| Renata Bedinotto      | 2410200496 |
 
 ## Referência principal
 

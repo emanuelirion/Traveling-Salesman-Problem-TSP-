@@ -2,7 +2,7 @@
 
 **Entregas intermunicipais com pedágio** — TSP multiobjetivo (distância × pedágio) resolvido com NSGA-II.
 
-Este documento descreve **como o problema foi modelado**: dados de entrada, formulação matemática, representação das soluções, adaptação do NSGA-II, critério de escolha da rota final, instâncias, plano de validação e premissas. A seção 11 mostra como a modelagem será dividida em módulos na implementação (etapa seguinte do projeto).
+Este documento descreve como o problema foi modelado:
 
 ---
 
