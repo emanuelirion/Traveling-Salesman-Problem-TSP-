@@ -123,11 +123,14 @@ Não há dados reais no enunciado. A modelagem prevê **instâncias sintéticas*
 
 ## 6. Equipe
 
-Preencher com nome e matrícula dos integrantes do grupo.
+Trabalho desenvolvido pelo grupo para a entrega do Checkpoint e Entrega Final:
 
-| Nome                  | Matrícula  |
+| Nome | Matrícula |
+| :--- | :--- |
 | Emanuel Irion da Rosa | 2310100375 |
-| Renata Bedinotto      | 2410200496 |
+| Fabiano Mion | Matrícula |
+| Hanna Mendonça | 2510101034|
+| Renata Bedinotto | 2410200496 |
 
 ## Referência principal
 
