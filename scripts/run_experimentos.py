@@ -6,7 +6,7 @@ from gerador import gerar_instancia_teste
 from configuracao import ConfiguracaoNSGA2
 from algoritmo import NSGA2
 from ordenacao import ordenar_nao_dominados, distancia_multidao
-from experiments import salvar_resultados
+from experimentos import salvar_resultados
 
 def main():
     print("A iniciar o experimento do NSGA-II...")
