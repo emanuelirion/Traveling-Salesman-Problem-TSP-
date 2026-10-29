@@ -33,7 +33,7 @@ def main():
     print(f"Execução concluída! Encontradas {len(resultado.fronteira_final)} rotas na frente de Pareto ótima.")
     
     # 4. Salva os resultados (pareto.csv e pareto.png) na pasta results/
-    salvar_resultados("instancia_teste_15", resultado, pesos_compromisso=0.5)
-
+    salvar_resultados("instancia_teste_15", resultado, instancia, pesos_compromisso=0.5)
+    
 if __name__ == "__main__":
     main()

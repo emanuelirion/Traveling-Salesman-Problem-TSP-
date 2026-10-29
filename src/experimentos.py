@@ -5,45 +5,73 @@ Responsável por processar a Fronteira de Pareto, calcular métricas e gerar gr�
 
 import os
 import csv
-from .compromisso import escolher_rota_compromisso
+import pandas as pd
+import matplotlib.pyplot as plt
+from src.nsga2.compromisso import escolher_rota_compromisso
 
-def salvar_resultados(instancia_nome: str, resultado, pesos_compromisso: float = 0.5) -> None:
+def salvar_resultados(nome_instancia, resultado, instancia, pesos_compromisso=0.5):
     """
-    Processa a fronteira final do NSGA-II, escolhe a rota de compromisso
-    e exporta os resultados para a pasta results/<instancia_nome>/
+    Processa a fronteira de Pareto final, calcula a rota de compromisso,
+    exporta os dados para CSV e gera o gráfico visual.
     """
-    diretorio = os.path.join("results", instancia_nome)
-    os.makedirs(diretorio, exist_ok=True)
+    # Cria a pasta de resultados se não existir
+    pasta_destino = os.path.join("results", nome_instancia)
+    os.makedirs(pasta_destino, exist_ok=True)
     
-    frente_indices = resultado.fronteira_final
-    if not frente_indices:
-        print("Aviso: A fronteira final está vazia. Nenhum resultado para salvar.")
-        return
-
-    # Extrai objetivos de toda a população para o cálculo do compromisso
-    objetivos = [(av.distancia, av.pedagio) for av in resultado.avaliacoes]
+    # 1. Escolhe a rota de compromisso usando a Distância de Multidão e os pesos
+    indice_compromisso = escolher_rota_compromisso(resultado.fronteira_final, pesos_compromisso)
     
-    # Escolhe a melhor rota pelo critério de compromisso normalizado
-    melhor_idx = escolher_rota_compromisso(objetivos, frente_indices, peso_distancia=pesos_compromisso)
+    dados_csv = []
     
-    # 1. Exportar para pareto.csv
-    caminho_csv = os.path.join(diretorio, "pareto.csv")
-    with open(caminho_csv, mode="w", newline="", encoding="utf-8") as f:
-        escritor = csv.writer(f)
-        escritor.writerow(["distancia_km", "pedagio_rs", "eh_escolhida", "sequencia_vertices"])
+    for i, individuo in enumerate(resultado.fronteira_final):
+        # Verifica se este indivíduo é o escolhido como compromisso
+        eh_escolhida = 1 if i == indice_compromisso else 0
         
-        for idx in frente_indices:
-            av = resultado.avaliacoes[idx]
-            rota = resultado.rotas[idx]
-            sequencia = [resultado.instancia.sede] + rota + [resultado.instancia.sede]
-            escolhida = 1 if idx == melhor_idx else 0
-            
-            escritor.writerow([av.distancia, av.pedagio, escolhida, "->".join(map(str, sequencia))])
-            
+        # Garante que a rota começa e termina na sede da instância
+        rota = individuo.rota
+        sequencia = [instancia.sede] + rota + [instancia.sede]
+        
+        dados_csv.append({
+            "rota_id": i,
+            "custo_distancia": individuo.custos[0],
+            "custo_pedagio": individuo.custos[1],
+            "crowding_distance": getattr(individuo, 'crowding_distance', 0.0),
+            "eh_escolhida": eh_escolhida,
+            "sequencia_cidades": " -> ".join(map(str, sequencia))
+        })
+        
+    # 2. Guarda os dados em CSV
+    df = pd.DataFrame(dados_csv)
+    caminho_csv = os.path.join(pasta_destino, "pareto.csv")
+    df.to_csv(caminho_csv, index=False)
     print(f"Resultados exportados com sucesso para: {caminho_csv}")
     
-    # 2. Gerar Gráfico (pareto.png)
-    gerar_grafico_pareto(objetivos, frente_indices, melhor_idx, diretorio)
+    # 3. Gera e guarda o gráfico da Fronteira de Pareto
+    plt.figure(figsize=(8, 6))
+    
+    distancias = [ind.custos[0] for ind in resultado.fronteira_final]
+    pedagios = [ind.custos[1] for ind in resultado.fronteira_final]
+    
+    plt.scatter(distancias, pedagios, c='blue', label='Fronteira de Pareto', zorder=3)
+    
+    # Destaca a rota de compromisso escolhida com uma estrela vermelha
+    if indice_compromisso is not None and 0 <= indice_compromisso < len(resultado.fronteira_final):
+        ind_comp = resultado.fronteira_final[indice_compromisso]
+        plt.scatter(
+            [ind_comp.custos[0]], [ind_comp.custos[1]],
+            c='red', marker='*', s=200, label='Rota de Compromisso', zorder=4
+        )
+        
+    plt.xlabel("Distância Total")
+    plt.ylabel("Custo de Portagens / Pedágio")
+    plt.title(f"Fronteira de Pareto - {nome_instancia}")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    
+    caminho_grafico = os.path.join(pasta_destino, "pareto.png")
+    plt.savefig(caminho_grafico, dpi=300)
+    plt.close()
+    print(f"Gráfico gerado e salvo em: {caminho_grafico}")
 
 def gerar_grafico_pareto(objetivos, fronteira, melhor_idx, diretorio: str) -> None:
     """Gera o gráfico de dispersão da Fronteira de Pareto usando matplotlib."""
