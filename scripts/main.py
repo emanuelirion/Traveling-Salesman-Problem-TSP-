@@ -1,7 +1,7 @@
-from configuracao import ConfiguracaoNSGA2
-from algoritmo import NSGA2
-from selecao import selecao_ambiental, torneio_por_multidao
-from gerador import gerar_instancia_teste
+from src.nsga2.configuracao import ConfiguracaoNSGA2
+from src.nsga2.algoritmo import NSGA2
+from src.nsga2.selecao import selecao_ambiental, torneio_por_multidao
+from src.gerador import gerar_instancia_teste
 
 # 1. Gera a instância do problema
 instancia = gerar_instancia_teste(n_cidades=15, densidade_arestas=0.9, semente=42)
@@ -16,8 +16,8 @@ config = ConfiguracaoNSGA2(
 # Dummy/Placeholder de ordenação para teste
 def ordenacao_simples(objetivos, violacoes):
     # Retorna os índices organizados em uma única frente para teste
-    factivies = sorted(range(len(objetivos)), key=lambda i: (violacoes[i], objetivos[i][0] + objetivos[i][1]))
-    return [factivies]
+    factiveis = sorted(range(len(objetivos)), key=lambda i: (violacoes[i], objetivos[i][0] + objetivos[i][1]))
+    return [factiveis]
 
 def multidao_simples(objetivos, frente):
     return {idx: 1.0 for idx in frente}
