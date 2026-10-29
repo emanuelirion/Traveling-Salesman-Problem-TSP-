@@ -4,7 +4,6 @@ Responsável por processar a Fronteira de Pareto, calcular métricas e gerar gr�
 """
 
 import os
-import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 from src.nsga2.compromisso import escolher_rota_compromisso
@@ -23,19 +22,22 @@ def salvar_resultados(nome_instancia, resultado, instancia, pesos_compromisso=0.
     
     dados_csv = []
     
-    for i, individuo in enumerate(resultado.fronteira_final):
+    for i, idx in enumerate(resultado.fronteira_final):
+        # Obtém a rota e a avaliação real usando o índice da fronteira
+        rota = resultado.rotas[idx]
+        avaliacao = resultado.avaliacoes[idx]
+        
         # Verifica se este indivíduo é o escolhido como compromisso
         eh_escolhida = 1 if i == indice_compromisso else 0
         
         # Garante que a rota começa e termina na sede da instância
-        rota = individuo.rota
         sequencia = [instancia.sede] + rota + [instancia.sede]
         
         dados_csv.append({
-            "rota_id": i,
-            "custo_distancia": individuo.custos[0],
-            "custo_pedagio": individuo.custos[1],
-            "crowding_distance": getattr(individuo, 'crowding_distance', 0.0),
+            "rota_id": idx,
+            "custo_distancia": avaliacao.distancia,
+            "custo_pedagio": avaliacao.pedagio,
+            "violacoes": avaliacao.violacoes,
             "eh_escolhida": eh_escolhida,
             "sequencia_cidades": " -> ".join(map(str, sequencia))
         })
@@ -49,17 +51,18 @@ def salvar_resultados(nome_instancia, resultado, instancia, pesos_compromisso=0.
     # 3. Gera e guarda o gráfico da Fronteira de Pareto
     plt.figure(figsize=(8, 6))
     
-    distancias = [ind.custos[0] for ind in resultado.fronteira_final]
-    pedagios = [ind.custos[1] for ind in resultado.fronteira_final]
+    distancias = [resultado.avaliacoes[idx].distancia for idx in resultado.fronteira_final]
+    pedagios = [resultado.avaliacoes[idx].pedagio for idx in resultado.fronteira_final]
     
     plt.scatter(distancias, pedagios, c='blue', label='Fronteira de Pareto', zorder=3)
     
-    # Destaca a rota de compromisso escolhida com uma estrela vermelha
+    # Destaca a rota de compromisso escolhida
     if indice_compromisso is not None and 0 <= indice_compromisso < len(resultado.fronteira_final):
-        ind_comp = resultado.fronteira_final[indice_compromisso]
+        idx_comp = resultado.fronteira_final[indice_compromisso]
+        aval_comp = resultado.avaliacoes[idx_comp]
         plt.scatter(
-            [ind_comp.custos[0]], [ind_comp.custos[1]],
-            c='red', marker='*', s=200, label='Rota de Compromisso', zorder=4
+            [aval_comp.distancia], [aval_comp.pedagio],
+            c='blue', marker='*', s=200, label='Rota de Compromisso', zorder=4
         )
         
     plt.xlabel("Distância Total")
@@ -93,7 +96,7 @@ def gerar_grafico_pareto(objetivos, fronteira, melhor_idx, diretorio: str) -> No
     plt.figure(figsize=(8, 6))
     plt.scatter(geral_dist, geral_ped, c="lightgray", label="População Geral", alpha=0.6)
     plt.plot(pareto_dist, pareto_ped, "o-", c="#1f77b4", label="Fronteira de Pareto", linewidth=2, markersize=6)
-    plt.scatter([escolhida_dist], [escolhida_ped], c="red", s=120, zorder=5, label="Rota de Compromisso Escolhida", marker="*")
+    plt.scatter([escolhida_dist], [escolhida_ped], c="blue", s=120, zorder=5, label="Rota de Compromisso Escolhida", marker="*")
 
     plt.xlabel("Distância Total (km)")
     plt.ylabel("Custo de Pedágio (R$)")
@@ -101,7 +104,7 @@ def gerar_grafico_pareto(objetivos, fronteira, melhor_idx, diretorio: str) -> No
     plt.legend()
     plt.grid(True, linestyle="--", alpha=0.5)
 
-    caminho_img = os.path.join(diretorio, "pareto.png")
-    plt.savefig(caminho_img, dpi=300, bbox_inches="tight")
+    cam_img = os.path.join(diretorio, "pareto.png")
+    plt.savefig(cam_img, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Gráfico gerado e salvo em: {caminho_img}")
+    print(f"Gráfico gerado e salvo em: {cam_img}")
