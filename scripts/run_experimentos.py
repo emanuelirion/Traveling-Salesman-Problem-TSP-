@@ -3,9 +3,9 @@ Script principal de execução de experimentos.
 """
 
 from gerador import gerar_instancia_teste
-from configuracao import ConfiguracaoNSGA2
-from algoritmo import NSGA2
-from ordenacao import ordenar_nao_dominados, distancia_multidao
+from src.nsga2.configuracao import ConfiguracaoNSGA2
+from src.nsga2.algoritmo import NSGA2
+from src.nsga2.ordenacao import ordenar_nao_dominados, distancia_multidao
 from experimentos import salvar_resultados
 
 def main():
