@@ -2,32 +2,34 @@
 
 Uma transportadora regional atende várias cidades com **um caminhão** que sai da sede, passa por todas e volta. Cada trecho tem uma **distância (km)** e um **pedágio (R$)**; rodovias pedagiadas costumam ser mais curtas, e estradas sem pedágio alongam o caminho. O gerente de logística precisa conhecer as **melhores trocas entre quilômetros e pedágio** antes de escolher a rota.
 
-Este projeto modela o problema como um **Traveling Salesman Problem (TSP) bi-objetivo** e o resolverá com o algoritmo **NSGA-II**. A entrega será:
+Este projeto modela o problema como um **Traveling Salesman Problem (TSP) bi-objetivo** e o resolveu com o algoritmo **NSGA-II**. A entrega contempla:
 
-1. o **conjunto de rotas não dominadas** (aproximação da fronteira de Pareto), com a distância e o pedágio de cada rota;
-2. **uma rota escolhida** desse conjunto, com critério definido e justificado.
+1. O **conjunto de rotas não dominadas** (aproximação da fronteira de Pareto), com a distância e o pedágio de cada rota;
+2. **Uma rota de compromisso escolhida** desse conjunto, fundamentada pelo método do Ponto Ideal Normalizado.
 
-|                |                                                                                         |
-| -------------- | --------------------------------------------------------------------------------------- |
+|               |                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------- |
 | **Problema**   | TSP tradicional: um veículo, grafo completo, cada cidade visitada uma vez, volta à sede |
 | **Categoria**  | Multiobjetivo                                                                           |
 | **Objetivos**  | (1) minimizar a distância total; (2) minimizar o pedágio total                          |
 | **Restrições** | Cada cidade recebe exatamente uma visita; a rota começa e termina na sede               |
 | **Algoritmo**  | NSGA-II (Deb et al., 2002)                                                              |
 
-## Estado do projeto (checkpoint de 15/10/2026)
+---
 
-| Etapa                                         | Situação                                                   |
-| --------------------------------------------- | ---------------------------------------------------------- |
-| Modelagem do problema                         | **Concluída**, em [`docs/MODELAGEM.md`](docs/MODELAGEM.md) |
-| Estrutura do repositório e README             | **Concluída** (este arquivo)                               |
-| Implementação do NSGA-II (`src/`, `scripts/`) | Planejada, ainda não iniciada                              |
-| Testes e validação (`tests/`)                 | Planejados                                                 |
-| Instâncias e resultados (`data/`, `results/`) | Planejados                                                 |
+## Estado do Projeto (Entrega Final)
+
+| Etapa                                         | Situação                                                     |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| Modelagem do problema                         | **Concluída**, em [`docs/MODELAGEM.md`](docs/MODELAGEM.md)   |
+| Estrutura do repositório e README             | **Concluída** (este arquivo)                                 |
+| Implementação do NSGA-II (`src/`, `scripts/`) | **Concluída** e modularizada                                 |
+| Testes e validação (`tests/`)                 | **Concluídos** (validação via Força Bruta e Crowding Dist.)  |
+| Instâncias e resultados (`data/`, `results/`) | **Concluídos** (gráficos de Pareto, Hipervolume e CSVs)      |
 
 ---
 
-## 1. Modelagem do problema
+## 1. Modelagem do Problema
 
 A modelagem completa está em **[`docs/MODELAGEM.md`](docs/MODELAGEM.md)**. Resumo:
 
@@ -36,13 +38,13 @@ A modelagem completa está em **[`docs/MODELAGEM.md`](docs/MODELAGEM.md)**. Resu
 - **Objetivos:** $\min f_1=\sum d_{ij}x_{ij}$ e $\min f_2=\sum p_{ij}x_{ij}$.
 - **Restrições:** grau de entrada e de saída igual a 1 em todo vértice (cada cidade visitada uma vez) e eliminação de sub-rotas (a rota fecha na sede).
 - **Dominância:** a rota A domina a B se não é pior em nenhum objetivo e é melhor em ao menos um. O conjunto das rotas não dominadas é a fronteira de Pareto.
-- **Codificação no NSGA-II:** o cromossomo é uma **permutação das N cidades**, com a sede implícita nas pontas. Assim as restrições valem por construção, sem penalidade nem reparo.
-- **Operadores:** torneio binário por multidão, cruzamento OX, mutação por inversão (2-opt) ou troca, sobrevivência $(\mu+\mu)$ com ordenação não dominada e distância de multidão.
-- **Critério de escolha da rota:** a rota **mais próxima do ponto ideal normalizado** (menor km e menor pedágio da fronteira), com pesos configuráveis (padrão 50/50). Justificativa e alternativas descartadas na seção 7 de `docs/MODELAGEM.md`.
+- **Codificação no NSGA-II:** o cromossomo é uma **permutação das N cidades**, com a sede implícita nas pontas. As restrições valem por construção.
+- **Operadores:** torneio binário por multidão, cruzamento OX, mutação por inversão/troca, sobrevivência $(\mu+\mu)$ com ordenação não dominada e distância de multidão (*Crowding Distance*).
+- **Critério de Escolha da Rota:** **Método do Ponto Ideal Normalizado** (Min-Max + Distância Euclidiana até $[0, 0]$), identificando a "rota de compromisso" localizada no cotovelo (*knee*) da fronteira de Pareto.
 
 ---
 
-## 2. Organização do repositório
+## 2. Organização do Repositório
 
 ```
 Traveling-Salesman-Problem-TSP/
@@ -68,8 +70,8 @@ Traveling-Salesman-Problem-TSP/
 ├── scripts/                       <- programas de linha de comando
 │   ├── README.md
 │   ├── main.py
-│   ├── run_experiment.py
-│   ├── experiments.py
+│   ├── run_experimentos.py
+│   ├── experimentos.py
 │   └── gerador.py
 ├── data/                          <- instâncias de entrada em CSV
 │   └── README.md
@@ -105,53 +107,49 @@ origem,destino,distancia_km,pedagio_rs
 
 `cidades.csv` — `id,nome,x_km,y_km` (o id 0 é a sede; as coordenadas só servem para desenhar a rota).
 
-### Formato das saídas (previsto)
+---
 
-| Arquivo               | Conteúdo                                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------ |
-| `pareto.csv`          | **Conjunto de rotas não dominadas**: distância (km), pedágio (R$) e sequência de vértices de cada rota |
-| `rota_escolhida.json` | Rota escolhida: critério, pesos, totais e trechos                                                      |
-| `pareto.png`          | Fronteira de Pareto (km × R$) com a rota escolhida destacada                                           |
-| `rota_escolhida.png`  | Mapa da rota                                                                                           |
-| `convergencia.png`    | Hipervolume por geração                                                                                |
+## 3. Formato das Saídas Geradas
+
+Cada execução armazena em `results/<nome_instancia>/`:
+
+| Arquivo       | Conteúdo                                                                               |
+| ------------- | -------------------------------------------------------------------------------------- |
+| `pareto.csv`  | Conjunto de rotas não dominadas, com distância, pedágio, flag `eh_escolhida` e ordem.  |
+| `pareto.png`  | Gráfico da Fronteira de Pareto ($km \times R\$$) com a Rota de Compromisso destacada.  |
+| `convergencia.png` | Evolução do Hipervolume por geração ao longo de múltiplas sementes.               |
 
 ---
 
-## 3. Plano para as próximas etapas
+## 4. Validação Experimental e Resultados
 
-1. Implementar o grafo, a avaliação das duas funções-objetivo e o gerador de instâncias sintéticas (seção 8 da modelagem).
-2. Implementar ordenação não dominada, distância de multidão e hipervolume.
-3. Implementar os operadores (população inicial, OX, mutação) e o laço do NSGA-II.
-4. Implementar o critério de escolha da rota.
-5. Validar contra a fronteira exata em instâncias com até 9 cidades e repetir com várias sementes.
-6. Gerar as instâncias, rodar os experimentos e preencher `results/` e este README com os resultados.
+O algoritmo foi validado empiricamente sob três perspectivas de análise:
+
+1. **Convergência (Hipervolume):** Acompanhamento do crescimento do hipervolume ao longo das gerações com diferentes sementes (10, 42, 99), demonstrando a estabilidade e rápida convergência do NSGA-II.
+2. **Qualidade da Diversidade (Crowding Distance):** Comparação experimental provando que a preservação da distância de multidão garante uma distribuição uniforme das soluções ao longo de toda a fronteira.
+3. **Aproximação da Fronteira Exata:** Testado em instâncias de até 9 cidades contra a busca por **Força Bruta**, comprovando que o NSGA-II encontra soluções praticamente idênticas às ótimas globais.
 
 ---
-
-## 4. Dados
-
-Não há dados reais no enunciado. A modelagem prevê **instâncias sintéticas** em que trechos pedagiados têm o caminho direto e custam R$/km, enquanto trechos sem pedágio custam zero mas têm o caminho alongado por um fator de desvio (1,25 a 1,70). Detalhes na seção 8 de `docs/MODELAGEM.md`. Dados reais podem ser usados no mesmo formato CSV.
 
 ## 5. Limitações
 
-- Distâncias e pedágios simétricos; pedágio fixo por trecho (sem categorias de eixo ou tarifa variável).
-- Apenas os dois objetivos pedidos: não há janelas de tempo, capacidade ou vários veículos.
-- O NSGA-II devolve uma **aproximação** da fronteira de Pareto, sem garantia de otimalidade para instâncias grandes.
+- Distâncias e pedágios simétricos; pedágio fixo por trecho.
+- Restrito aos dois objetivos definidos (não considera janelas de tempo nem frota múltipla).
+- Por tratar-se de uma meta-heurística, o NSGA-II garante aproximação de alta qualidade da fronteira de Pareto, mas sem prova analítica de otimalidade em instâncias de grande escala.
 
 ---
 
 ## 6. Equipe
 
-Trabalho desenvolvido pelo grupo para a entrega do Checkpoint e Entrega Final:
+Trabalho desenvolvido para a entrega do Checkpoint e Entrega Final:
 
 | Nome | Matrícula |
 | :--- | :--- |
 | Emanuel Irion da Rosa | 2310100375 |
 | Fabiano Mion | Matrícula |
-| Hanna Mendonça | 2510101034|
+| Hanna Mendonça | 2510101034 |
 | Renata Bedinotto | 2410200496 |
 
-## Referência principal
+## Referência Principal
 
 Deb, K.; Pratap, A.; Agarwal, S.; Meyarivan, T. _A fast and elitist multiobjective genetic algorithm: NSGA-II_. IEEE Transactions on Evolutionary Computation, 6(2), 182–197, 2002.
-
