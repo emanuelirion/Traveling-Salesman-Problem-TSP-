@@ -2,11 +2,11 @@
 Script principal de execução de experimentos.
 """
 
-from gerador import gerar_instancia_teste
+from src.gerador import gerar_instancia_teste
 from src.nsga2.configuracao import ConfiguracaoNSGA2
 from src.nsga2.algoritmo import NSGA2
 from src.nsga2.ordenacao import ordenar_nao_dominados, distancia_multidao
-from experimentos import salvar_resultados
+from src.experimentos import salvar_resultados
 
 def main():
     print("A iniciar o experimento do NSGA-II...")
