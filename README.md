@@ -45,21 +45,40 @@ A modelagem completa está em **[`docs/MODELAGEM.md`](docs/MODELAGEM.md)**. Resu
 ## 2. Organização do repositório
 
 ```
-tsp-multiobjetivo-nsga2/
-├── README.md                  ← este arquivo
+Traveling-Salesman-Problem-TSP/
+├── README.md                      <- este arquivo
 ├── .gitignore
 ├── docs/
-│   └── MODELAGEM.md           ← modelagem completa (matemática, NSGA-II, critério de escolha, validação)
-├── src/                       ← código-fonte do NSGA-II (a implementar)
+│   └── MODELAGEM.md               <- modelagem completa (matemática, NSGA-II, critério de escolha, validação)
+├── src/                           <- código-fonte do NSGA-II
+│   ├── README.md
+│   ├── nsga2/
+│   │   ├── algoritmo.py
+│   │   ├── compromisso.py
+│   │   ├── configuracao.py
+│   │   ├── ordenacao.py
+│   │   └── selecao.py
+│   └── operators/
+│       ├── contratos.py
+│       ├── cruzamento.py
+│       ├── inicializacao.py
+│       ├── instancia.py
+│       ├── mutacao.py
+│       └── reparo.py
+├── scripts/                       <- programas de linha de comando
+│   ├── README.md
+│   ├── main.py
+│   ├── run_experiment.py
+│   ├── experiments.py
+│   └── gerador.py
+├── data/                          <- instâncias de entrada em CSV
 │   └── README.md
-├── scripts/                   ← programas de linha de comando (a implementar)
+├── results/                       <- saídas das execuções
 │   └── README.md
-├── data/                      ← instâncias de entrada em CSV
-│   └── README.md
-├── results/                   ← saídas das execuções
-│   └── README.md
-└── tests/                     ← testes automatizados (a implementar)
-    └── README.md
+└── tests/                         <- testes automatizados
+    ├── README.md
+    ├── test_compromisso.py
+    └── test_ordenacao.py
 ```
 
 | Pasta / arquivo | Papel                                                                                                                                                      |
