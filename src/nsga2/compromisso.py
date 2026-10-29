@@ -1,61 +1,53 @@
 """
-Escolha da rota final: a mais próxima do ponto ideal normalizado.
+Módulo de Compromisso
+Calcula a rota de compromisso usando o Ponto Ideal Normalizado (Min-Max + Euclidiana).
 """
 
-from math import sqrt
-
-
-def escolher_rota_compromisso(
-    fronteira_final,
-    peso_distancia: float = 0.5,
-) -> int:
+def escolher_rota_compromisso(avaliacoes_fronteira, pesos_compromisso=0.5):
     """
-    Escolhe a rota de menor distância ao ponto ideal normalizado.
-    Funciona quer a fronteira contenha objetos, tuplos ou índices inteiros.
+    Recebe uma lista de tuplas ou objetos com (distancia, pedagio) para a fronteira final.
+    Retorna o ÍNDICE da rota que está mais próxima do Ponto Ideal (0, 0) normalizado.
     """
-    if not fronteira_final:
-        raise ValueError("a fronteira não pode ser vazia")
-    if not 0.0 <= peso_distancia <= 1.0:
-        raise ValueError("peso_distancia deve estar entre 0 e 1")
+    if not avaliacoes_fronteira:
+        return None
+        
+    if len(avaliacoes_fronteira) == 1:
+        return 0
 
-    # Extrai os custos de forma segura para cada elemento da fronteira
-    custos_lista = []
-    for item in fronteira_final:
-        if hasattr(item, 'custos'):
-            custos_lista.append(item.custos)
-        elif isinstance(item, (list, tuple)):
-            custos_lista.append(item)
-        elif isinstance(item, (int, float)):
-            # Se for um número/índice bruto, é tratado como custo unitário ou simulado
-            custos_lista.append((float(item), 0.0))
+    pontos = []
+    for item in avaliacoes_fronteira:
+        if isinstance(item, (tuple, list)):
+            pontos.append((item[0], item[1]))
+        elif hasattr(item, 'distancia') and hasattr(item, 'pedagio'):
+            pontos.append((item.distancia, item.pedagio))
         else:
-            custos_lista.append((0.0, 0.0))
+            # Caso receba tupla por getattr ou dict
+            d = getattr(item, 'distancia', 0.0)
+            p = getattr(item, 'pedagio', 0.0)
+            pontos.append((d, p))
 
-    n_objetivos = len(custos_lista[0]) if custos_lista else 2
-    
-    minimos = [min(c[k] for c in custos_lista) for k in range(n_objetivos)]
-    maximos = [max(c[k] for c in custos_lista) for k in range(n_objetivos)]
+    distancias = [p[0] for p in pontos]
+    pedagios = [p[1] for p in pontos]
 
-    pontuacoes = {}
-    pesos = (peso_distancia, 1.0 - peso_distancia)
+    min_dist, max_dist = min(distancias), max(distancias)
+    min_ped, max_ped = min(pedagios), max(pedagios)
 
-    for i, custos in enumerate(custos_lista):
-        soma = 0.0
-        for k in range(n_objetivos):
-            amplitude = maximos[k] - minimos[k]
-            z = (custos[k] - minimos[k]) / amplitude if amplitude > 0 else 0.0
-            soma += pesos[k] * z * z
-        pontuacoes[i] = sqrt(soma)
+    range_dist = (max_dist - min_dist) if (max_dist - min_dist) > 0 else 1.0
+    range_ped = (max_ped - min_ped) if (max_ped - min_ped) > 0 else 1.0
 
-    def get_distancia(item):
-        if hasattr(item, 'custos'):
-            return item.custos[0]
-        elif isinstance(item, (list, tuple)):
-            return item[0]
-        return 0.0
+    melhor_idx = 0
+    menor_dist_euclidiana = float('inf')
 
-    # Retorna o índice da fronteira escolhida
-    return min(
-        range(len(fronteira_final)),
-        key=lambda i: (round(pontuacoes[i], 12), get_distancia(fronteira_final[i])),
-    )
+    for i, (d, p) in enumerate(pontos):
+        # Normalização Min-Max [0, 1]
+        d_norm = (d - min_dist) / range_dist
+        p_norm = (p - min_ped) / range_ped
+
+        # Distância ao Ponto Ideal [0, 0]
+        dist_euc = (d_norm ** 2 + p_norm ** 2) ** 0.5
+
+        if dist_euc < menor_dist_euclidiana:
+            menor_dist_euclidiana = dist_euc
+            melhor_idx = i
+
+    return melhor_idx

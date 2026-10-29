@@ -9,28 +9,23 @@ import matplotlib.pyplot as plt
 from src.nsga2.compromisso import escolher_rota_compromisso
 
 def salvar_resultados(nome_instancia, resultado, instancia, pesos_compromisso=0.5):
-    """
-    Processa a fronteira de Pareto final, calcula a rota de compromisso,
-    exporta os dados para CSV e gera o gráfico visual.
-    """
-    # Cria a pasta de resultados se não existir
     pasta_destino = os.path.join("results", nome_instancia)
     os.makedirs(pasta_destino, exist_ok=True)
     
-    # 1. Escolhe a rota de compromisso usando a Distância de Multidão e os pesos
-    indice_compromisso = escolher_rota_compromisso(resultado.fronteira_final, pesos_compromisso)
+    # Prepara a lista de pares (distancia, pedagio) reais para a fronteira
+    avaliacoes_fronteira = [
+        (resultado.avaliacoes[idx].distancia, resultado.avaliacoes[idx].pedagio)
+        for idx in resultado.fronteira_final
+    ]
+    
+    # 1. Escolhe a rota usando a matemática real do Ponto Ideal
+    indice_compromisso = escolher_rota_compromisso(avaliacoes_fronteira, pesos_compromisso)
     
     dados_csv = []
-    
     for i, idx in enumerate(resultado.fronteira_final):
-        # Obtém a rota e a avaliação real usando o índice da fronteira
         rota = resultado.rotas[idx]
         avaliacao = resultado.avaliacoes[idx]
-        
-        # Verifica se este indivíduo é o escolhido como compromisso
         eh_escolhida = 1 if i == indice_compromisso else 0
-        
-        # Garante que a rota começa e termina na sede da instância
         sequencia = [instancia.sede] + rota + [instancia.sede]
         
         dados_csv.append({
@@ -42,26 +37,22 @@ def salvar_resultados(nome_instancia, resultado, instancia, pesos_compromisso=0.
             "sequencia_cidades": " -> ".join(map(str, sequencia))
         })
         
-    # 2. Guarda os dados em CSV
     df = pd.DataFrame(dados_csv)
     caminho_csv = os.path.join(pasta_destino, "pareto.csv")
     df.to_csv(caminho_csv, index=False)
-    print(f"Resultados exportados com sucesso para: {caminho_csv}")
+    print(f"Resultados exportados para: {caminho_csv}")
     
-    # 3. Gera e guarda o gráfico da Fronteira de Pareto
+    # Gera o gráfico
     plt.figure(figsize=(8, 6))
-    
-    distancias = [resultado.avaliacoes[idx].distancia for idx in resultado.fronteira_final]
-    pedagios = [resultado.avaliacoes[idx].pedagio for idx in resultado.fronteira_final]
+    distancias = [p[0] for p in avaliacoes_fronteira]
+    pedagios = [p[1] for p in avaliacoes_fronteira]
     
     plt.scatter(distancias, pedagios, c='blue', label='Fronteira de Pareto', zorder=3)
     
-    # Destaca a rota de compromisso escolhida
-    if indice_compromisso is not None and 0 <= indice_compromisso < len(resultado.fronteira_final):
-        idx_comp = resultado.fronteira_final[indice_compromisso]
-        aval_comp = resultado.avaliacoes[idx_comp]
+    if indice_compromisso is not None and 0 <= indice_compromisso < len(avaliacoes_fronteira):
+        pt_comp = avaliacoes_fronteira[indice_compromisso]
         plt.scatter(
-            [aval_comp.distancia], [aval_comp.pedagio],
+            [pt_comp[0]], [pt_comp[1]],
             c='blue', marker='*', s=200, label='Rota de Compromisso', zorder=4
         )
         
@@ -74,7 +65,7 @@ def salvar_resultados(nome_instancia, resultado, instancia, pesos_compromisso=0.
     caminho_grafico = os.path.join(pasta_destino, "pareto.png")
     plt.savefig(caminho_grafico, dpi=300)
     plt.close()
-    print(f"Gráfico gerado e salvo em: {caminho_grafico}")
+    print(f"Gráfico salvo em: {caminho_grafico}")
 
 def gerar_grafico_pareto(objetivos, fronteira, melhor_idx, diretorio: str) -> None:
     """Gera o gráfico de dispersão da Fronteira de Pareto usando matplotlib."""
